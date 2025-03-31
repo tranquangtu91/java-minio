@@ -34,8 +34,11 @@ public class FileController {
 
 
     @PostMapping("/upload")
-    public CompletableFuture<ResponseEntity<FileUploadResponseDTO>> uploadFile(@RequestBody MultipartFile file) throws IOException {
-        return imageAdapter.writeFileSync(Paths.get(file.getOriginalFilename()), file.getBytes(), null)
+    public CompletableFuture<ResponseEntity<FileUploadResponseDTO>> uploadFile(@RequestBody MultipartFile file, @RequestParam(value = "path", required = false) String path) throws IOException {
+        // Ensure path ends with "/"
+        String filePath = (path != null && !path.isEmpty()) ? path.replaceAll("/+$", "") + "/" : "";
+
+        return imageAdapter.writeFileSync(Paths.get(file.getOriginalFilename()), file.getBytes(), filePath)
                 .thenApply(voidResult -> ResponseEntity.ok(new FileUploadResponseDTO("success", "File uploaded successfully", file.getOriginalFilename())))
                 .exceptionally(ex -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body(new FileUploadResponseDTO("error", "Error uploading file: " + ex.getMessage(), null)));
@@ -69,7 +72,7 @@ public class FileController {
     public CompletableFuture<ResponseEntity<BaseResponseDTO>> deleteFile(@RequestParam String fileName) throws IOException {
         Path filePath = Paths.get(fileName);
 
-        return imageAdapter.rmdirSync(filePath)
+        return imageAdapter.rmSync(filePath)
                 .thenApply(url -> ResponseEntity.ok(new BaseResponseDTO("success", "Delete File successfully: " + fileName)))
                 .exceptionally(ex -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body(new BaseResponseDTO("error", ex.getMessage())));

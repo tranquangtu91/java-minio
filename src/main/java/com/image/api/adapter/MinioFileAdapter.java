@@ -51,13 +51,13 @@ public class MinioFileAdapter implements FileAdapter {
     }
 
     @Override
-    public CompletableFuture<Void> writeFileSync(Path file, byte[] data, String options) {
+    public CompletableFuture<Void> writeFileSync(Path file, byte[] data, String path) {
         return CompletableFuture.runAsync(() -> {
             try (ByteArrayInputStream inputStream = new ByteArrayInputStream(data)) {
                 minioClient.putObject(
                         PutObjectArgs.builder()
                                 .bucket(bucketName)
-                                .object(file.getFileName().toString())
+                                .object(path + file.getFileName().toString())
                                 .stream(inputStream, data.length, -1)
                                 .contentType(MediaType.APPLICATION_OCTET_STREAM_VALUE)
                                 .build()
@@ -86,6 +86,9 @@ public class MinioFileAdapter implements FileAdapter {
                 );
                 return true;
             } catch (ErrorResponseException e) {
+                if (e.errorResponse().code().equals("NoSuchKey")) {
+                    return false;
+                }
                 throw new RuntimeException("MinIO Error: " + e.errorResponse().message(), e);
             } catch (Exception e) {
                 throw new RuntimeException("Error checking file existence in MinIO: " + e.getMessage(), e);
@@ -128,18 +131,7 @@ public class MinioFileAdapter implements FileAdapter {
 
     @Override
     public CompletableFuture<Void> rmdirSync(Path path) {
-        return CompletableFuture.runAsync(() -> {
-            try {
-                minioClient.removeObject(
-                        RemoveObjectArgs.builder()
-                                .bucket(bucketName)
-                                .object(path.toString())
-                                .build()
-                );
-            } catch (Exception e) {
-                throw new RuntimeException("Unexpected error while deleting file: " + e.getMessage(), e);
-            }
-        });
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
@@ -149,7 +141,24 @@ public class MinioFileAdapter implements FileAdapter {
 
     @Override
     public CompletableFuture<Void> rmSync(Path path) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        return existsSync(path)
+                .thenCompose(exists -> {
+                    if (!exists) {
+                        return CompletableFuture.failedFuture(new RuntimeException("File does not exist"));
+                    }
+                    return CompletableFuture.runAsync(() -> {
+                        try {
+                            minioClient.removeObject(
+                                    RemoveObjectArgs.builder()
+                                            .bucket(bucketName)
+                                            .object(path.toString())
+                                            .build()
+                            );
+                        } catch (Exception e) {
+                            throw new RuntimeException("Unexpected error while deleting file: " + e.getMessage(), e);
+                        }
+                    });
+                });
     }
 
     @Override
@@ -205,7 +214,6 @@ public class MinioFileAdapter implements FileAdapter {
                                 .object(oldName)
                                 .build()
                 );
-
             } catch (MinioException e) {
                 throw new RuntimeException("Error renaming file in MinIO", e);
             } catch (Exception e) {
