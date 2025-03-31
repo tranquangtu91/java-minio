@@ -1,4 +1,4 @@
-package com.image.api.dto.response;
+package com.file.api.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

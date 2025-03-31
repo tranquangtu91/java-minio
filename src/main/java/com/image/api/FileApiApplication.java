@@ -1,13 +1,13 @@
-package com.image.api;
+package com.file.api;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class ImageApiApplication {
+public class FileApiApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(ImageApiApplication.class, args);
+		SpringApplication.run(FileApiApplication.class, args);
 	}
 
 }

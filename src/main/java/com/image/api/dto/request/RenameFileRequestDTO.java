@@ -1,5 +1,6 @@
-package com.image.api.dto.request;
+package com.file.api.dto.request;
 
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -9,7 +10,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @AllArgsConstructor
-public class RenameImageRequestDTO {
+public class RenameFileRequestDTO {
     @NotNull
     @NotEmpty
     private String oldFileName;
@@ -17,4 +18,9 @@ public class RenameImageRequestDTO {
     @NotNull
     @NotEmpty
     private String newFileName;
+
+    @AssertTrue(message = "old and new names must be different")
+    private boolean isSameName() {
+        return !newFileName.equals(oldFileName);
+    }
 }

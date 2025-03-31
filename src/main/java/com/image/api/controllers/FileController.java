@@ -1,9 +1,12 @@
-package com.image.api.controllers;
+package com.file.api.controllers;
 
-import com.image.api.adapter.ImageAdapter;
-import com.image.api.dto.request.CopyImageRequestDTO;
-import com.image.api.dto.request.RenameImageRequestDTO;
-import com.image.api.dto.response.*;
+import com.file.api.adapter.FileAdapter;
+import com.file.api.dto.request.CopyFileRequestDTO;
+import com.file.api.dto.response.BaseResponseDTO;
+import com.file.api.dto.response.GetFileUrlResponseDTO;
+import com.file.api.dto.response.FileUploadResponseDTO;
+import com.file.api.dto.request.RenameFileRequestDTO;
+import com.file.api.dto.response.RenameFileResponseDTO;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -20,22 +23,22 @@ import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/minio")
-public class ImageController {
+public class FileController {
 
     @Autowired
-    private final ImageAdapter imageAdapter;
+    private final FileAdapter imageAdapter;
 
-    public ImageController(ImageAdapter imageAdapter) {
+    public FileController(FileAdapter imageAdapter) {
         this.imageAdapter = imageAdapter;
     }
 
 
     @PostMapping("/upload")
-    public CompletableFuture<ResponseEntity<ImageUploadResponseDTO>> uploadFile(@RequestBody MultipartFile file) throws IOException {
+    public CompletableFuture<ResponseEntity<FileUploadResponseDTO>> uploadFile(@RequestBody MultipartFile file) throws IOException {
         return imageAdapter.writeFileSync(Paths.get(file.getOriginalFilename()), file.getBytes(), null)
-                .thenApply(voidResult -> ResponseEntity.ok(new ImageUploadResponseDTO("success", "File uploaded successfully", file.getOriginalFilename())))
+                .thenApply(voidResult -> ResponseEntity.ok(new FileUploadResponseDTO("success", "File uploaded successfully", file.getOriginalFilename())))
                 .exceptionally(ex -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(new ImageUploadResponseDTO("error", "Error uploading file: " + ex.getMessage(), null)));
+                        .body(new FileUploadResponseDTO("error", "Error uploading file: " + ex.getMessage(), null)));
     }
 
     @GetMapping("/download")
@@ -53,7 +56,7 @@ public class ImageController {
 
     @PostMapping("/copy")
     public CompletableFuture<ResponseEntity<BaseResponseDTO>> copyFile(
-            @Valid @RequestBody CopyImageRequestDTO copyImageRequestDTO) throws IOException {
+            @Valid @RequestBody CopyFileRequestDTO copyImageRequestDTO) throws IOException {
 
         Path sourcePath = Paths.get(copyImageRequestDTO.getSource());
         Path destPath = Paths.get(copyImageRequestDTO.getDestination());
@@ -82,12 +85,12 @@ public class ImageController {
     }
 
     @PutMapping("/rename")
-    public CompletableFuture<ResponseEntity<RenameImageResponseDTO>> renameFile(@Valid @RequestBody RenameImageRequestDTO renameImageRequestDTO) throws IOException {
+    public CompletableFuture<ResponseEntity<RenameFileResponseDTO>> renameFile(@Valid @RequestBody RenameFileRequestDTO renameImageRequestDTO) throws IOException {
         return imageAdapter.renameFile(null, renameImageRequestDTO.getOldFileName(), renameImageRequestDTO.getNewFileName())
                 .thenApply(voidResult -> ResponseEntity.ok(
-                        new RenameImageResponseDTO("success", "File renamed successfully", renameImageRequestDTO.getNewFileName())
+                        new RenameFileResponseDTO("success", "File renamed successfully", renameImageRequestDTO.getNewFileName())
                 ))
                 .exceptionally(ex -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(new RenameImageResponseDTO("error", "Error renaming file: " + ex.getMessage(), null)));
+                        .body(new RenameFileResponseDTO("error", "Error renaming file: " + ex.getMessage(), null)));
     }
 }

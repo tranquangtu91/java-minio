@@ -8,10 +8,10 @@
 		<version>3.4.4</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.image.api</groupId>
-	<artifactId>image-api</artifactId>
+	<groupId>com.file.api</groupId>
+	<artifactId>file-api</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>image-api</name>
+	<name>file-api</name>
 	<description>MinIO Integration</description>
 	<url/>
 	<licenses>

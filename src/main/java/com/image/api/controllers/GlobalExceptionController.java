@@ -1,4 +1,4 @@
-package com.image.api.controllers;
+package com.file.api.controllers;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

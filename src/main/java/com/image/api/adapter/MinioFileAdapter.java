@@ -1,6 +1,5 @@
-package com.image.api.adapter;
+package com.file.api.adapter;
 
-import com.image.api.adapter.ImageAdapter;
 import io.minio.*;
 import io.minio.errors.ErrorResponseException;
 import io.minio.errors.MinioException;
@@ -17,14 +16,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 @Service
-public class MinioImageAdapter implements ImageAdapter {
+public class MinioFileAdapter implements FileAdapter {
     @Autowired
     private final MinioClient minioClient;
 
     private final String bucketName;
 
-    public MinioImageAdapter(MinioClient minioClient,
-                             @Value("${minio.bucketName}") String bucketName) {
+    public MinioFileAdapter(MinioClient minioClient,
+                            @Value("${minio.bucketName}") String bucketName) {
         this.minioClient = minioClient;
         this.bucketName = bucketName;
     }
@@ -37,22 +36,12 @@ public class MinioImageAdapter implements ImageAdapter {
     @Override
     public CompletableFuture<byte[]> readFileSync(Path path, String encoding, String flag) {
         return CompletableFuture.supplyAsync(() -> {
-            try {
-                // Checking file exists
-                minioClient.statObject(
-                        StatObjectArgs.builder()
-                                .bucket(bucketName)
-                                .object(path.toString())
-                                .build()
-                );
-
-                try (InputStream stream = minioClient.getObject(
-                        GetObjectArgs.builder()
-                                .bucket(bucketName)
-                                .object(path.toString())
-                                .build())) {
-                    return stream.readAllBytes();
-                }
+            try (InputStream stream = minioClient.getObject(
+                    GetObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object(path.toString())
+                            .build())) {
+                return stream.readAllBytes();
             } catch (ErrorResponseException e) {
                 throw new RuntimeException("MinIO Error: " + e.errorResponse().message(), e);
             } catch (Exception e) {
@@ -87,26 +76,31 @@ public class MinioImageAdapter implements ImageAdapter {
 
     @Override
     public CompletableFuture<Boolean> existsSync(Path path) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                minioClient.statObject(
+                        StatObjectArgs.builder()
+                                .bucket(bucketName)
+                                .object(path.toString())
+                                .build()
+                );
+                return true;
+            } catch (ErrorResponseException e) {
+                throw new RuntimeException("MinIO Error: " + e.errorResponse().message(), e);
+            } catch (Exception e) {
+                throw new RuntimeException("Error checking file existence in MinIO: " + e.getMessage(), e);
+            }
+        });
     }
 
     @Override
-    public CompletableFuture<Void> copyFileSync(Path src, Path dest, int mode) {System.out.println("still runnn");
+    public CompletableFuture<Void> copyFileSync(Path src, Path dest, int mode) {
         String srcPath = src.toString();
         String destPath = dest.toString();
         return CompletableFuture.runAsync(() -> {
             try {
                 if (srcPath.equals(destPath)) {
                     throw new IllegalArgumentException("Source and destination cannot be the same");
-                }
-
-                // Checking file exist
-                boolean sourceExists = minioClient.statObject(
-                        StatObjectArgs.builder().bucket(bucketName).object(srcPath).build()
-                ) != null;
-
-                if (!sourceExists) {
-                    throw new RuntimeException("Source file does not exist: " + srcPath);
                 }
 
                 minioClient.copyObject(
@@ -119,7 +113,7 @@ public class MinioImageAdapter implements ImageAdapter {
                                         .build())
                                 .build()
                 );
-            } catch (MinioException e) {System.out.println(e.getMessage());
+            } catch (MinioException e) {
                 throw new RuntimeException("Error copying file in MinIO", e);
             } catch (Exception e) {
                 throw new RuntimeException("Unexpected error", e);
@@ -135,16 +129,7 @@ public class MinioImageAdapter implements ImageAdapter {
     @Override
     public CompletableFuture<Void> rmdirSync(Path path) {
         return CompletableFuture.runAsync(() -> {
-
             try {
-                // Checking file exists
-                minioClient.statObject(
-                        StatObjectArgs.builder()
-                                .bucket(bucketName)
-                                .object(path.toString())
-                                .build()
-                );
-
                 minioClient.removeObject(
                         RemoveObjectArgs.builder()
                                 .bucket(bucketName)
@@ -171,14 +156,6 @@ public class MinioImageAdapter implements ImageAdapter {
     public CompletableFuture<String> getFileUrl(Path path) {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                // Checking file exists
-                minioClient.statObject(
-                        StatObjectArgs.builder()
-                                .bucket(bucketName)
-                                .object(path.toString())
-                                .build()
-                );
-
                 return minioClient.getPresignedObjectUrl(
                         GetPresignedObjectUrlArgs.builder()
                                 .bucket(bucketName)
