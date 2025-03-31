@@ -1,4 +1,4 @@
-package com.image.api.adapter;
+package com.file.api.adapter;
 
 import java.io.File;
 import java.io.IOException;
@@ -6,7 +6,7 @@ import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
 
-public interface ImageAdapter {
+public interface FileAdapter {
     String getAdapterName();
 
     CompletableFuture<byte[]> readFileSync(Path path, String encoding, String flag) throws IOException;
